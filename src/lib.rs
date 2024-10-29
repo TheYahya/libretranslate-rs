@@ -6,7 +6,7 @@
 //! ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/grantshandy/libretranslate-rs/Rust)
 //!
 //! A LibreTranslate API client for Rust.
-//! ```
+//! ```toml
 //! libretranslate = "0.5"
 //! ```
 //!
@@ -16,7 +16,7 @@
 //! `libretranslate` is an async library, so you'll have to use an async runtime like [`tokio`](https://crates.io/crates/tokio) or [`async-std`](https://crates.io/crates/async-std).
 //!
 //! All translations are done through the [`translate`](crate::translate) function:
-//! ```rust
+//! ```rust,no_run
 //! use libretranslate::{translate, Language};
 //!
 //! #[tokio::main]
@@ -33,7 +33,7 @@
 //! ```
 //!
 //! Output:
-//! ```
+//! ```text
 //! Input French: le texte français.
 //! Output English: the French text.
 //! ```
@@ -42,7 +42,7 @@
 //!
 //! ## Language Detection
 //! Here's a simple example.
-//! ```rust
+//! ```rust,no_run
 //! use libretranslate::{translate, Language};
 //!
 //! #[tokio::main]
@@ -58,7 +58,7 @@
 //! ```
 //!
 //! Output:
-//! ```
+//! ```text
 //! Input French: le texte français.
 //! Output English: the French text.
 //! ```
@@ -74,6 +74,8 @@
 //!
 //! Here's a simple example.
 //! ```rust
+//! use libretranslate::{Language};
+//!
 //! let lang = Language::English;
 //! let lang_parse = "english".parse::<Language>().unwrap();
 //!
@@ -88,7 +90,7 @@
 //! The trait `Translate` implements [`AsRef<str>`](https://doc.rust-lang.org/std/convert/trait.AsRef.html), meaning that any `&str` or `String` can be translated into any other language.
 //!
 //! Here's a simple example.
-//! ```rust
+//! ```rust,no_run
 //! use libretranslate::{Language, Translate};
 //!
 //! #[tokio::main]
@@ -105,7 +107,7 @@
 //! ```
 //!
 //! Output:
-//! ```
+//! ```text
 //! Output: "Dies ist Text, geschrieben auf einem Computer, in Englisch."
 //! ```
 //!
@@ -123,6 +125,7 @@
 //! - Russian
 //! - Spanish
 //! - Polish
+//! - Persian
 //!
 
 use serde_json::Value;
@@ -252,6 +255,7 @@ pub enum Language {
     Russian,
     Spanish,
     Polish,
+    Persian,
 }
 
 impl Language {
@@ -270,6 +274,7 @@ impl Language {
             Language::Russian => "ru",
             Language::Spanish => "es",
             Language::Polish => "pl",
+            Language::Persian => "fa",
         }
     }
 
@@ -288,6 +293,7 @@ impl Language {
             Language::Russian => "Russian",
             Language::Spanish => "Spanish",
             Language::Polish => "pl",
+            Language::Persian => "Persian",
         }
     }
 
@@ -311,6 +317,7 @@ impl Language {
             "es" => Ok(Language::Spanish),
             "ja" => Ok(Language::Japanese),
             "pl" => Ok(Language::Polish),
+            "fa" => Ok(Language::Persian),
             &_ => Err(LanguageError::FormatError("Unknown Language".to_string())),
         }
     }
@@ -339,6 +346,7 @@ impl FromStr for Language {
             "es" => Ok(Language::Spanish),
             "ja" => Ok(Language::Japanese),
             "pl" => Ok(Language::Polish),
+            "fa" => Ok(Language::Persian),
             "english" => Ok(Language::English),
             "arabic" => Ok(Language::Arabic),
             "chinese" => Ok(Language::Chinese),
@@ -350,6 +358,7 @@ impl FromStr for Language {
             "spanish" => Ok(Language::Spanish),
             "japanese" => Ok(Language::Japanese),
             "polish" => Ok(Language::Polish),
+            "persian" => Ok(Language::Persian),
             "auto" => Ok(Language::Detect),
             &_ => Err(LanguageError::FormatError(s.to_string())),
         }
@@ -371,6 +380,7 @@ impl std::fmt::Display for Language {
             Language::Spanish => write!(f, "es"),
             Language::Japanese => write!(f, "ja"),
             Language::Polish => write!(f, "pl"),
+            Language::Persian => write!(f, "fa"),
         }
     }
 }
