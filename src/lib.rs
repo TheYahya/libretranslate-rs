@@ -138,6 +138,7 @@ pub struct Translation {
     pub target: Language,
     pub input: String,
     pub output: String,
+    pub alternatives: Vec<String>,
 }
 
 /// Translate text between two [`Language`](Language).
@@ -145,13 +146,14 @@ pub async fn translate<T: AsRef<str>>(
     source: Language,
     target: Language,
     input: T,
+    alternatives: Option<u8>,
     key: Option<T>,
 ) -> Result<Translation, TranslateError> {
     let url = "https://libretranslate.com/";
 
     let key: Option<String> = key.map(|data| data.as_ref().to_string());
 
-    let data = translate_url(source, target, input.as_ref(), url, key).await?;
+    let data = translate_url(source, target, input.as_ref(), url, alternatives, key).await?;
 
     Ok(data)
 }
@@ -162,6 +164,7 @@ pub async fn translate_url<T: AsRef<str>>(
     target: Language,
     input: T,
     url: T,
+    alternatives: Option<u8>,
     key: Option<String>,
 ) -> Result<Translation, TranslateError> {
     let complete_url: String;
@@ -176,12 +179,15 @@ pub async fn translate_url<T: AsRef<str>>(
         return Err(TranslateError::LengthError);
     };
 
+    let alt = alternatives.unwrap_or(0);
+
     let data: Value = match key {
         Some(key) => {
             serde_json::json!({
                 "q": input.as_ref(),
                 "source": source.as_code(),
                 "target": target.as_code(),
+                "alternatives": alt.to_string(),
                 "api_key": key,
             })
         }
@@ -190,6 +196,7 @@ pub async fn translate_url<T: AsRef<str>>(
                 "q": input.as_ref(),
                 "source": source.as_code(),
                 "target": target.as_code(),
+                "alternatives": alt.to_string(),
             })
         }
     };
@@ -226,6 +233,14 @@ pub async fn translate_url<T: AsRef<str>>(
         }
     };
 
+    let alternatives: Vec<String> = match &parsed_json["alternatives"] {
+        Value::Array(arr) => arr
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect(),
+        _ => Vec::new(),
+    };
+
     let input = input.as_ref().to_string();
     let output = output.to_string();
 
@@ -235,10 +250,11 @@ pub async fn translate_url<T: AsRef<str>>(
         target,
         input,
         output,
+        alternatives,
     })
 }
 
-use std::str::FromStr;
+use std::{str::FromStr, u8};
 
 /// Languages that can used for input and output of the [`translate`](crate::translate) function.
 #[derive(Debug, Clone, PartialEq, Copy, Hash)]
@@ -458,7 +474,8 @@ impl<'a> Query<'a> {
     }
 
     pub async fn translate(self) -> Result<String, TranslateError> {
-        let res = crate::translate_url(self.source, self.target, self.text, self.url, None).await?;
+        let res =
+            crate::translate_url(self.source, self.target, self.text, self.url, None, None).await?;
         Ok(res.output)
     }
 }
@@ -499,6 +516,7 @@ pub struct TranslationBuilder {
     pub source: Language,
     pub target: Language,
     pub input: String,
+    pub alternatives: Option<u8>,
     key: Option<String>,
 }
 
@@ -509,6 +527,7 @@ impl TranslationBuilder {
             source: Language::Detect,
             target: Language::default(),
             input: String::new(),
+            alternatives: Some(0),
             key: None,
         }
     }
@@ -533,6 +552,11 @@ impl TranslationBuilder {
         self
     }
 
+    pub fn alternatives(mut self, alternavives: u8) -> Self {
+        self.alternatives = Some(alternavives);
+        self
+    }
+
     pub fn key<T: AsRef<str>>(mut self, key: T) -> Self {
         self.key = Some(key.as_ref().to_string());
         self
@@ -546,6 +570,7 @@ impl TranslationBuilder {
                 target: self.target,
                 input: self.input,
                 output: String::new(),
+                alternatives: Vec::new(),
             });
         };
 
@@ -554,6 +579,7 @@ impl TranslationBuilder {
             self.target,
             self.input.clone(),
             self.url.clone(),
+            self.alternatives,
             self.key,
         )
         .await?;
@@ -567,6 +593,7 @@ impl TranslationBuilder {
             target: self.target,
             input: self.input,
             output: data.output,
+            alternatives: data.alternatives,
         })
     }
 }
